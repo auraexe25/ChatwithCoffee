@@ -1,6 +1,6 @@
 # ChatWithCoffee — Simple Chatbot Assistant
 
-![coffee](assets/coffee.svg) ![chat](assets/chat.svg)
+![cover](assets/cover.svg)
 
 ChatWithCoffee is a small, local chatbot assistant intended to help with quick questions and simple tasks while you work — with a cup of coffee nearby.
 
