@@ -1,6 +1,6 @@
 # ChatWithCoffee — Simple Chatbot Assistant
 
-![cover](assets/cover.svg)
+![cover](assets/coverimg.png)
 
 ChatWithCoffee is a small, local chatbot assistant intended to help with quick questions and simple tasks while you work — with a cup of coffee nearby.
 
@@ -32,14 +32,4 @@ python main.py
 deactivate
 ```
 
-## Assets
-
-Icons are stored in `assets/`:
-
-- `assets/coffee.svg` — coffee cup icon
-- `assets/chat.svg` — chat bubble icon
-
-## Contributing
-
-Add dependencies to `requirements.txt` and include any run instructions above.
 
