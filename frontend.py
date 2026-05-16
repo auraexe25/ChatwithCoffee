@@ -1,10 +1,32 @@
 import streamlit as st
+import json
+import os
+import uuid
+from typing import Any
 
 from backend import generate_reply, generate_reply_stream
 
 # --- UI Configuration ---
 st.title("ChatWithCoffee")
 ASSISTANT_AVATAR = "assets/images.jpeg"
+
+SAVED_PATH = "saved_chats.json"
+
+
+def _load_saved_chats() -> list[dict[str, Any]]:
+    if os.path.exists(SAVED_PATH):
+        try:
+            with open(SAVED_PATH, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            return []
+    return []
+
+
+def _save_saved_chats(chats: list[dict[str, Any]]) -> None:
+    with open(SAVED_PATH, "w", encoding="utf-8") as f:
+        json.dump(chats, f, ensure_ascii=False, indent=2)
+
 
 # --- Session Initialization ---
 # Keep chat history in session_state so it persists across reruns.
@@ -13,12 +35,41 @@ if "messages" not in st.session_state:
         {"role": "assistant", "content": "Hi! I’m your coffee chatbot assistant."}
     ]
 
+if "saved_chats" not in st.session_state:
+    st.session_state.saved_chats = _load_saved_chats()
+
 # Reset history to start a fresh conversation.
 if st.button("New Chat"):
     st.session_state.messages = [
         {"role": "assistant", "content": "Hi! I’m your coffee chatbot assistant."}
     ]
     st.rerun()
+
+# --- Sidebar: Saved Conversations ---
+st.sidebar.title("Conversations")
+
+save_title = st.sidebar.text_input("Save current chat as", value="")
+if st.sidebar.button("Save Chat"):
+    title = save_title.strip() or f"Chat {len(st.session_state.saved_chats) + 1}"
+    entry = {"id": str(uuid.uuid4()), "title": title, "messages": st.session_state.messages}
+    st.session_state.saved_chats.append(entry)
+    _save_saved_chats(st.session_state.saved_chats)
+    st.sidebar.success("Saved")
+
+if st.session_state.saved_chats:
+    titles = [c["title"] for c in st.session_state.saved_chats]
+    idx = st.sidebar.selectbox("Saved chats", range(len(titles)), format_func=lambda i: titles[i])
+    col1, col2 = st.sidebar.columns(2)
+    if col1.button("Resume"):
+        chosen = st.session_state.saved_chats[idx]
+        st.session_state.messages = chosen["messages"].copy()
+        st.rerun()
+    if col2.button("Delete"):
+        del st.session_state.saved_chats[idx]
+        _save_saved_chats(st.session_state.saved_chats)
+        st.rerun()
+else:
+    st.sidebar.info("No saved conversations")
 
 # --- Chat History Rendering ---
 for message in st.session_state.messages:
