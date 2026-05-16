@@ -57,17 +57,30 @@ if st.sidebar.button("Save Chat"):
     st.sidebar.success("Saved")
 
 if st.session_state.saved_chats:
-    titles = [c["title"] for c in st.session_state.saved_chats]
-    idx = st.sidebar.selectbox("Saved chats", range(len(titles)), format_func=lambda i: titles[i])
-    col1, col2 = st.sidebar.columns(2)
-    if col1.button("Resume"):
-        chosen = st.session_state.saved_chats[idx]
-        st.session_state.messages = chosen["messages"].copy()
-        st.rerun()
-    if col2.button("Delete"):
-        del st.session_state.saved_chats[idx]
-        _save_saved_chats(st.session_state.saved_chats)
-        st.rerun()
+    if "menu_open" not in st.session_state:
+        st.session_state.menu_open = None
+    
+    for entry in st.session_state.saved_chats:
+        row_cols = st.sidebar.columns([0.7, 0.15])
+        row_cols[0].markdown(entry["title"])
+
+        # Menu button that toggles menu state
+        if row_cols[1].button("⋮", key=f"menu_{entry['id']}"):
+            st.session_state.menu_open = None if st.session_state.menu_open == entry["id"] else entry["id"]
+            st.rerun()
+
+        # Show action buttons when menu is open
+        if st.session_state.menu_open == entry["id"]:
+            col1, col2 = st.sidebar.columns(2)
+            if col1.button("Resume", key=f"resume_{entry['id']}", use_container_width=True):
+                st.session_state.messages = entry["messages"].copy()
+                st.session_state.menu_open = None
+                st.rerun()
+            if col2.button("Delete", key=f"delete_{entry['id']}", use_container_width=True):
+                st.session_state.saved_chats = [c for c in st.session_state.saved_chats if c["id"] != entry["id"]]
+                _save_saved_chats(st.session_state.saved_chats)
+                st.session_state.menu_open = None
+                st.rerun()
 else:
     st.sidebar.info("No saved conversations")
 
