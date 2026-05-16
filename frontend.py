@@ -1,6 +1,6 @@
 import streamlit as st
 
-from backend import generate_reply
+from backend import generate_reply, generate_reply_stream
 
 # --- UI Configuration ---
 st.title("ChatWithCoffee")
@@ -37,12 +37,15 @@ if prompt := st.chat_input("Type your message..."):
     try:
         # Exclude the just-added prompt from history to avoid duplicate input.
         history = st.session_state.messages[:-1]
-        bot_reply = generate_reply(history, prompt)
+        full_reply = ""
+        # Stream the reply into the chat message as chunks arrive.
+        with st.chat_message("assistant", avatar=ASSISTANT_AVATAR):
+            msg_placeholder = st.empty()
+            for chunk in generate_reply_stream(history, prompt):
+                full_reply += chunk
+                msg_placeholder.write(full_reply)
     except Exception as error:
         # Show readable runtime errors in UI instead of crashing the app.
-        bot_reply = f"Chat error: {error}"
+        full_reply = f"Chat error: {error}"
 
-    st.session_state.messages.append({"role": "assistant", "content": bot_reply})
-
-    with st.chat_message("assistant", avatar=ASSISTANT_AVATAR):
-        st.write(bot_reply)
+    st.session_state.messages.append({"role": "assistant", "content": full_reply})

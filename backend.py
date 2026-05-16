@@ -1,5 +1,5 @@
 import os
-from typing import Annotated, TypedDict
+from typing import Annotated, TypedDict, Iterator
 
 from dotenv import load_dotenv
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
@@ -69,3 +69,31 @@ def generate_reply(history: list[dict[str, str]], user_input: str) -> str:
     result = chatbot.invoke({"messages": messages})
     last_message = result["messages"][-1]
     return str(last_message.content)
+
+
+def generate_reply_stream(history: list[dict[str, str]], user_input: str) -> Iterator[str]:
+    # Build the messages list same as generate_reply, but stream the model output.
+    messages: list[BaseMessage] = [SystemMessage(content=SYSTEM_PROMPT)]
+
+    for item in history:
+        role = item.get("role")
+        content = item.get("content", "")
+        if not content:
+            continue
+        if role == "user":
+            messages.append(HumanMessage(content=content))
+        elif role == "assistant":
+            messages.append(AIMessage(content=content))
+
+    messages.append(HumanMessage(content=user_input))
+
+    llm = _build_llm()
+    # `ChatGroq.stream` yields incremental chunks; yield their text content.
+    for chunk in llm.stream(messages):
+        text = getattr(chunk, "text", None)
+        if text is None:
+            # Fallback to `content` if available.
+            text = getattr(chunk, "content", None)
+        if not text:
+            continue
+        yield str(text)
